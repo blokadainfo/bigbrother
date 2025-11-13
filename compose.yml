@@ -1,0 +1,15 @@
+services:
+  bigbrother:
+    image: ghcr.io/blokadainfo/bigbrother:latest
+    environment:
+      RECORDINGS_PATH: "/recordings"
+      RECORDINGS_HOURS: 24
+      STREAMS_0_SRC: ${STREAMS_0_SRC}
+      STREAMS_0_DST: ${STREAMS_0_DST}
+      # STREAMS_1_SRC: ${STREAMS_1_SRC}
+      # STREAMS_1_DST: ${STREAMS_1_DST}
+    volumes:
+      - type: bind
+        source: /var/bigbrother/recordings
+        target: /recordings
+    restart: unless-stopped
