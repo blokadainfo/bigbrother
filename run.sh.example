@@ -3,7 +3,8 @@ podman build -t bigbrother-dev . && \
 podman run \
   -v $(pwd)/recordings:/recordings:z \
   -e RECORDINGS_PATH="/recordings" \
-  -e RECORDINGS_HOURS="24" \
+  -e RECORDINGS_LIMIT="500" \
+  -e RECORDINGS_DRYRUN="true" \
   -e STREAMS_0_SRC="INPUT" \
   -e STREAMS_0_DST="stream1" \
   bigbrother-dev

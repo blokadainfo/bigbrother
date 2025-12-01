@@ -12,8 +12,9 @@ type Config struct {
 }
 
 type RecordingsConfig struct {
-	Path  string
-	Hours int
+	Path   string
+	Limit  int  // In gigabytes (GB), 0 means no limit
+	DryRun bool // When set to true only prints what would get deleted instead of actually removing files
 }
 
 type StreamConfig struct {
@@ -22,32 +23,59 @@ type StreamConfig struct {
 }
 
 func LoadConfig() (Config, error) {
-	recordingsConfig := RecordingsConfig{
-		Path: os.Getenv("RECORDINGS_PATH"),
+	recordingsPath, recordingsPathF := os.LookupEnv("RECORDINGS_PATH")
+	if !recordingsPathF {
+		return Config{}, fmt.Errorf("Env var RECORDINGS_PATH must be set")
+	}
+	if recordingsPath == "" {
+		return Config{}, fmt.Errorf("Env var RECORDINGS_PATH must not be an empty string")
 	}
 
-	if recordingsConfig.Path == "" {
-		return Config{}, fmt.Errorf("RECORDINGS_PATH is required")
+	recordingsLimitS, recordingsLimitF := os.LookupEnv("RECORDINGS_LIMIT")
+	if !recordingsLimitF {
+		return Config{}, fmt.Errorf("Env var RECORDINGS_LIMIT must be set")
 	}
-
-	recordingsHoursS := os.Getenv("RECORDINGS_HOURS")
-	if recordingsHoursS == "" {
-		return Config{}, fmt.Errorf("RECORDINGS_HOURS is required")
+	if recordingsLimitS == "" {
+		return Config{}, fmt.Errorf("Env var RECORDINGS_LIMIT must not be an empty string")
 	}
-
-	recordingsHours, err := strconv.Atoi(recordingsHoursS)
+	recordingsLimit, err := strconv.Atoi(recordingsLimitS)
 	if err != nil {
-		return Config{}, fmt.Errorf("invalid RECORDINGS_HOURS value: %v", err)
+		return Config{}, fmt.Errorf("Invalid RECORDINGS_LIMIT value: %v", err)
 	}
-	recordingsConfig.Hours = recordingsHours
+
+	recordingsDryRunS, recordingsDryRunF := os.LookupEnv("RECORDINGS_DRYRUN")
+	if !recordingsDryRunF {
+		return Config{}, fmt.Errorf("Env var RECORDINGS_DRYRUN must be set")
+	}
+	if recordingsDryRunS == "" {
+		return Config{}, fmt.Errorf("Env var RECORDINGS_DRYRUN must not be an empty string")
+	}
+	recordingsDryRun, err := strconv.ParseBool(recordingsDryRunS)
+	if err != nil {
+		return Config{}, fmt.Errorf("Invalid RECORDINGS_DRYRUN value: %v", err)
+	}
 
 	var streams []StreamConfig
 	for i := 0; ; i++ {
-		src := os.Getenv(fmt.Sprintf("STREAMS_%d_SRC", i))
-		dst := os.Getenv(fmt.Sprintf("STREAMS_%d_DST", i))
-		if src == "" || dst == "" {
+		src, srcF := os.LookupEnv(fmt.Sprintf("STREAMS_%d_SRC", i))
+		dst, dstF := os.LookupEnv(fmt.Sprintf("STREAMS_%d_DST", i))
+
+		// If neither source nor destination are set, all streams have been found
+		if !srcF && !dstF {
 			break
 		}
+		// If only one of the two isn't found, it's user error
+		if !srcF || !dstF {
+			return Config{}, fmt.Errorf("Both STREAMS_%d_SRC and STREAMS_%d_DST must be set", i, i)
+		}
+
+		if src == "" {
+			return Config{}, fmt.Errorf("Env var STREAMS_%d_SRC must not be an empty string", i)
+		}
+		if dst == "" {
+			return Config{}, fmt.Errorf("Env var STREAMS_%d_DST must not be an empty string", i)
+		}
+
 		streams = append(streams, StreamConfig{Src: src, Dst: dst})
 	}
 
@@ -56,7 +84,11 @@ func LoadConfig() (Config, error) {
 	}
 
 	return Config{
-		Recordings: recordingsConfig,
-		Streams:    streams,
+		Recordings: RecordingsConfig{
+			Path:   recordingsPath,
+			Limit:  recordingsLimit,
+			DryRun: recordingsDryRun,
+		},
+		Streams: streams,
 	}, nil
 }

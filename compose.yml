@@ -3,7 +3,8 @@ services:
     image: ghcr.io/blokadainfo/bigbrother:latest
     environment:
       RECORDINGS_PATH: "/recordings"
-      RECORDINGS_HOURS: 24
+      RECORDINGS_LIMIT: 500 # In GB
+      RECORDINGS_DRYRUN: true # Set to false when you want to really delete files
       STREAMS_0_SRC: ${STREAMS_0_SRC}
       STREAMS_0_DST: ${STREAMS_0_DST}
       # STREAMS_1_SRC: ${STREAMS_1_SRC}
