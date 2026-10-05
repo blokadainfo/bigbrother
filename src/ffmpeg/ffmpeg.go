@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	filePrefix  = "%Y-%m-%d_%H:%M:%S"
+	filePrefix  = "%Y-%m-%d_%H:%M:%S%z"
 	segmentTime = 300 // 5 minutes
 )
 

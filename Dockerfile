@@ -11,6 +11,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt update && \
     apt install -y \
     ca-certificates \
+    tzdata \
     libssl-dev \
     libz-dev \
     libvpx-dev \
